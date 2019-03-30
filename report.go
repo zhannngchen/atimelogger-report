@@ -15,6 +15,8 @@ type Activity struct {
     note string
 }
 
+var stats = make(map[string]map[string]time.Duration)
+
 func parseRecord(r []string) Activity {
     var act Activity
     act.name = r[0]
@@ -22,6 +24,15 @@ func parseRecord(r []string) Activity {
     act.duration, _ = time.ParseDuration(d)
     act.note = r[4]
     return act
+}
+
+func updateStats(a Activity) {
+    items := stats[a.name]
+    if items == nil {
+        items = make(map[string]time.Duration)
+        stats[a.name] = items
+    }
+    items[a.note] += a.duration
 }
 
 func main() {
@@ -38,12 +49,20 @@ func main() {
             break
         }
         if err != nil {
-            log.Fatal(err)
+            log.Print(err)
+            break
         }
         if len(record) < 1 {
             break
         }
         act := parseRecord(record)
-        fmt.Printf("%s\t%s\t%v\t%s\n", act.name, record[1], act.duration, act.note)
+        updateStats(act)
+    }
+
+    for actName, item := range stats {
+        fmt.Println(actName)
+        for it, time := range item {
+            fmt.Printf("\t%s\t%v\n", it, time)
+        }
     }
 }
